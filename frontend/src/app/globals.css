@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-base: #ea580c;
+  --primary-hover: #f97316;
+  --primary-shadow: rgba(234, 88, 12, 0.2);
+}
+
+@layer base {
+  body {
+    @apply text-slate-700 antialiased selection:bg-indigo-500 selection:text-white;
+    background-color: #fcfcfd;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 400;
+    letter-spacing: -0.011em;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "cv02", "cv05", "cv08", "cv11", "ss01";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif;
+    letter-spacing: -0.03em;
+    @apply font-semibold text-slate-900;
+  }
+}
+
+@layer components {
+  .premium-card {
+    @apply bg-white border border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] rounded-premium transition-all duration-300;
+  }
+
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-xl border border-white/50 rounded-premium-lg shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+  }
+
+  .premium-gradient-card {
+    @apply bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-700 text-white shadow-2xl;
+  }
+
+  .premium-sidebar-active {
+    @apply bg-indigo-50/80 text-indigo-600 border-r-2 border-indigo-600 font-bold;
+  }
+
+  .premium-glass-panel {
+    @apply bg-[#ffffff7d] backdrop-blur-sm border border-[#ffffff4d] shadow-[0_4px_30px_rgba(0,0,0,0.03)];
+  }
+  
+  .compact-btn {
+    @apply px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-200 active:scale-[0.98];
+  }
+
+  .premium-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600;
+  }
+
+  /* Global Premium Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-200/80 rounded-full hover:bg-slate-300/80 transition-colors border-2 border-transparent bg-clip-padding;
+  }
+
+  .animate-pulse-fast {
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
+  }
+
+  .font-signature {
+    font-family: 'Alex Brush', cursive;
+  }
+
+  .animate-progress-fast {
+    animation: progress-fast 1s ease-in-out infinite;
+  }
+
+  @keyframes progress-fast {
+    0% { width: 0%; left: 0; }
+    50% { width: 100%; left: 0; }
+    100% { width: 0%; left: 100%; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .7; }
+  }
+
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+  }
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+
+  @keyframes toast-in-right {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  @keyframes toast-out-right {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+
+  .toast-glass {
+    @apply bg-white/80 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)];
+  }
+
+  .animate-toast-in {
+    animation: toast-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-toast-out {
+    animation: toast-out-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes toast-progress {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+
+  .animate-toast-progress {
+    animation: toast-progress linear forwards;
+  }
+}
