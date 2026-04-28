@@ -24,8 +24,21 @@ export default function DashboardLayout({ children }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
+      <div className="flex bg-[#fdfdff] min-h-screen">
+        {/* Sidebar Skeleton */}
+        <div className="w-64 bg-white border-r border-slate-100 p-6 space-y-8 animate-pulse">
+          <div className="h-8 w-32 bg-slate-100 rounded-lg" />
+          <div className="space-y-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-10 w-full bg-slate-50 rounded-xl" />
+            ))}
+          </div>
+        </div>
+        {/* Content Skeleton */}
+        <div className="flex-1 p-8 space-y-6">
+           <div className="h-12 w-1/4 bg-slate-100 rounded-2xl animate-pulse" />
+           <div className="h-[200px] w-full bg-slate-50 rounded-3xl animate-pulse" />
+        </div>
       </div>
     );
   }

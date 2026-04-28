@@ -109,4 +109,67 @@ export const PulseSkeleton = () => (
   </div>
 );
 
+export const ActivityLogSkeleton = () => (
+  <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="flex items-center justify-between py-2.5">
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-14 w-14 rounded-2xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+      </div>
+      <Skeleton className="h-10 w-64 rounded-2xl" />
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => <StatSkeleton key={i} />)}
+    </div>
+    <div className="bg-white rounded-3xl border border-slate-200/60 shadow-xl overflow-hidden">
+      {[...Array(10)].map((_, i) => (
+        <div key={i} className="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-10 rounded-xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-6 w-16 rounded-full" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+export const TeamSkeleton = () => (
+  <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="flex items-center justify-between py-4">
+      <Skeleton className="h-10 w-64" />
+      <Skeleton className="h-10 w-32 rounded-xl" />
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[...Array(6)].map((_, i) => (
+        <div key={i} className="bg-white rounded-3xl border border-slate-200/60 p-6 space-y-4">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-2xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <div className="space-y-2 pt-4">
+             <Skeleton className="h-3 w-full" />
+             <Skeleton className="h-3 w-5/6" />
+          </div>
+          <div className="flex gap-2 pt-2">
+             <Skeleton className="h-8 w-24 rounded-lg" />
+             <Skeleton className="h-8 w-24 rounded-lg" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default Skeleton;

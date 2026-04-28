@@ -10,6 +10,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, ComposedChart
 } from 'recharts';
+import { ActivityLogSkeleton } from '@/components/Skeleton';
 
 // --- Components ---
 
@@ -185,6 +186,8 @@ const ActivityLog = () => {
     insights?.moduleStats?.map(s => ({ name: s._id, value: s.count })) || [], 
   [insights]);
 
+  if (loading) return <ActivityLogSkeleton />;
+
   return (
     <div className="max-w-[1240px] mx-auto space-y-4 px-4 md:px-0 mb-8 min-h-screen">
       {/* Balanced Dashboard Header */}
@@ -232,12 +235,7 @@ const ActivityLog = () => {
         </div>
       </div>
 
-      {loading && view === 'insights' ? (
-         <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-            <div className="w-10 h-10 border-4 border-violet-100 border-t-violet-600 rounded-full animate-spin" />
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] font-mono animate-pulse">Syncing Secure Vault...</p>
-         </div>
-      ) : view === 'logs' ? (
+      {view === 'logs' ? (
         <div className="space-y-3 animate-in fade-in duration-500">
           <div className="bg-white/80 backdrop-blur-xl p-2.5 rounded-2xl border border-slate-200/60 shadow-sm flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px] group">

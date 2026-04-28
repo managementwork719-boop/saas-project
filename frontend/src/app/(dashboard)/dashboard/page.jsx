@@ -5,15 +5,25 @@ import AdminDashboard from '@/views/AdminDashboard';
 import SalesDashboard from '@/views/SalesDashboard';
 import ProjectDashboard from '@/views/ProjectDashboard';
 import UserDashboard from '@/views/UserDashboard';
-import { FileText } from 'lucide-react';
+import { HeaderSkeleton, AnalyticsSkeleton, StatSkeleton } from '@/components/Skeleton';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
+      <div className="space-y-6 animate-in fade-in duration-500">
+        <HeaderSkeleton>
+           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[...Array(5)].map((_, i) => <StatSkeleton key={i} />)}
+           </div>
+        </HeaderSkeleton>
+        <AnalyticsSkeleton />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+           <div className="h-[300px] bg-slate-100/50 rounded-3xl animate-pulse" />
+           <div className="h-[300px] bg-slate-100/50 rounded-3xl animate-pulse" />
+           <div className="h-[300px] bg-slate-100/50 rounded-3xl animate-pulse" />
+        </div>
       </div>
     );
   }

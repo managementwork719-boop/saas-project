@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { TeamSkeleton } from '@/components/Skeleton';
 
 const Team = () => {
   const { user } = useAuth();
@@ -175,6 +176,8 @@ const Team = () => {
   };
 
   const canAdd = isAdmin || isSalesManager || isProjectManager;
+
+  if (loading && members.length === 0) return <TeamSkeleton />;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
