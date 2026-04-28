@@ -71,19 +71,25 @@ const SalesDashboard = ({ mode = 'dashboard', initialStats = null }) => {
   const [uploadLoading, setUploadLoading] = useState(false);
 
   // TanStack Query
-  const { data: stats, isLoading: loading, refetch: fetchStats } = useQuery({
+  const { data: stats, isLoading: loading, isError, refetch: fetchStats } = useQuery({
     queryKey: ['salesStats', selectedYear],
     queryFn: async () => {
-      const res = await API.get(`/sales/dashboard?year=${selectedYear}`);
-      return res.data.data;
+      try {
+        const res = await API.get(`/sales/dashboard?year=${selectedYear}`);
+        return res.data.data;
+      } catch (err) {
+        console.error('Stats fetch error:', err);
+        throw err;
+      }
     },
-    initialData: selectedYear === new Date().getFullYear().toString() ? initialStats : undefined
+    initialData: selectedYear === new Date().getFullYear().toString() ? initialStats : undefined,
+    retry: 1
   });
 
   const { data: team = [], isLoading: teamLoading } = useQuery({
     queryKey: ['teamStats', selectedYear],
     queryFn: async () => await fetchTeamStats(selectedYear),
-    enabled: user?.role !== 'sales-team'
+    enabled: !!user && user.role !== 'sales-team'
   });
 
   const { data: overdueProjects = [], isLoading: overdueLoading } = useQuery({
@@ -92,7 +98,7 @@ const SalesDashboard = ({ mode = 'dashboard', initialStats = null }) => {
       const res = await API.get('/sales/overdue-projects');
       return res.data.data.overdueProjects || [];
     },
-    enabled: ['sales-manager', 'admin', 'super-admin'].includes(user?.role)
+    enabled: !!user && ['sales-manager', 'admin', 'super-admin'].includes(user?.role)
   });
 
   const handleManualSubmit = async (e) => {
@@ -134,7 +140,8 @@ const SalesDashboard = ({ mode = 'dashboard', initialStats = null }) => {
   };
 
   const leaderboardData = React.useMemo(() => {
-    const topEarners = [...team].sort((a,b) => (b.stats?.totalRevenue||0) - (a.stats?.totalRevenue||0));
+    const teamArray = Array.isArray(team) ? team : [];
+    const topEarners = [...teamArray].sort((a,b) => (b.stats?.totalRevenue||0) - (a.stats?.totalRevenue||0));
     const maxRev = Math.max(...topEarners.map(m => m.stats?.totalRevenue || 1), 1);
     return topEarners.slice(0, 5).map(member => ({
       ...member,
@@ -157,16 +164,6 @@ const SalesDashboard = ({ mode = 'dashboard', initialStats = null }) => {
         'Location': 'Mumbai',
         'Requirement': 'Web Development',
         'Budget': 50000
-      },
-      {
-        'ID': 'L-102',
-        'Name': 'Jane Smith',
-        'Phone': '9123456789',
-        'Email': 'jane@example.com',
-        'Source': 'Facebook',
-        'Location': 'Delhi',
-        'Requirement': 'Mobile App',
-        'Budget': 75000
       }
     ];
 
@@ -193,8 +190,26 @@ const SalesDashboard = ({ mode = 'dashboard', initialStats = null }) => {
      </div>
   );
 
+  if (isError) return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+      <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500">
+        <AlertCircle size={32} />
+      </div>
+      <div className="text-center">
+        <h3 className="text-lg font-bold text-slate-900">Failed to load dashboard</h3>
+        <p className="text-sm text-slate-500">There was an error connecting to the server.</p>
+      </div>
+      <button 
+        onClick={() => fetchStats()}
+        className="px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-all"
+      >
+        Try Again
+      </button>
+    </div>
+  );
+
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto pb-10">
+    <div className="space-y-6 max-w-[1400px] mx-auto pb-10 min-h-screen">
       {/* HEADER CONTROLS */}
       <div className="flex items-center justify-between mb-2">
         <span className="px-4 py-1.5 bg-white/70 backdrop-blur-md border border-slate-200/60 rounded-full text-[11px] font-bold text-slate-500 uppercase tracking-widest shadow-sm">

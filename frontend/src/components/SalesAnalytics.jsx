@@ -56,7 +56,7 @@ const SalesAnalytics = ({ stats, user }) => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
       
       {/* Revenue Flow - Neon Sunset Style */}
-      <div className="bg-white/70 backdrop-blur-xl rounded-[24px] p-5 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-[220px] flex flex-col relative overflow-hidden group">
+      <div className="bg-white/70 backdrop-blur-xl rounded-[24px] p-5 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-[250px] flex flex-col relative overflow-hidden group">
         <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-[40px] animate-pulse" />
         
         <div className="flex items-center justify-between mb-4 relative z-10">
@@ -74,8 +74,8 @@ const SalesAnalytics = ({ stats, user }) => {
           </div>
         </div>
         
-        <div className="flex-1 w-full relative z-10">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="flex-1 w-full relative z-10" style={{ minWidth: 0, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <AreaChart data={monthlyData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="neonGradient" x1="0" y1="0" x2="1" y2="0">
@@ -98,7 +98,7 @@ const SalesAnalytics = ({ stats, user }) => {
       </div>
 
       {/* Conversion - Vibrant Cyan/Emerald */}
-      <div className="bg-white/70 backdrop-blur-xl rounded-[24px] p-5 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-[220px] flex flex-col relative overflow-hidden group">
+      <div className="bg-white/70 backdrop-blur-xl rounded-[24px] p-5 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-[250px] flex flex-col relative overflow-hidden group">
         <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-cyan-500/10 rounded-full blur-[40px]" />
         
         <div className="flex items-center justify-between mb-4 relative z-10">
@@ -117,8 +117,8 @@ const SalesAnalytics = ({ stats, user }) => {
           </div>
         </div>
 
-        <div className="flex-1 w-full relative z-10">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="flex-1 w-full relative z-10" style={{ minWidth: 0, minHeight: 0 }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
             <BarChart data={monthlyData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }} barGap={12}>
               <CartesianGrid strokeDasharray="0" vertical={false} stroke="#E2E8F0" opacity={0.2} />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#94a3b8' }} dy={10}/>
