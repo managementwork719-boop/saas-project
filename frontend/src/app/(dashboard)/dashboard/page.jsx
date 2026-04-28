@@ -1,15 +1,22 @@
+'use client';
 import React from 'react';
-import { cookies } from 'next/headers';
+import { useAuth } from '@/context/AuthContext';
 import AdminDashboard from '@/views/AdminDashboard';
 import SalesDashboard from '@/views/SalesDashboard';
 import ProjectDashboard from '@/views/ProjectDashboard';
 import UserDashboard from '@/views/UserDashboard';
 import { FileText } from 'lucide-react';
-import { fetchServer } from '@/utils/fetchServer';
 
-export default async function DashboardPage() {
-  const data = await fetchServer('/auth/getMe');
-  const user = data?.data?.user;
+export default function DashboardPage() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   if (!user) return null;
 
@@ -27,8 +34,7 @@ export default async function DashboardPage() {
   }
 
   if (user.role === 'sales-manager') {
-    const statsData = await fetchServer(`/sales/dashboard?year=${new Date().getFullYear()}`);
-    return <SalesDashboard mode="dashboard" initialStats={statsData?.data} />;
+    return <SalesDashboard mode="dashboard" />;
   }
 
   if (user.role === 'project-manager' || user.role === 'project-team') {

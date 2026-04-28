@@ -94,8 +94,8 @@ const SalesAnalytics = ({ stats, user }) => {
           </div>
         </div>
         
-        <div className="flex-1 w-full relative z-10" style={{ minHeight: '150px' }}>
-          <ResponsiveContainer width="100%" aspect={2.5}>
+        <div className="flex-1 w-full relative z-10" style={{ minWidth: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="neonGradient" x1="0" y1="0" x2="1" y2="0">
@@ -153,8 +153,8 @@ const SalesAnalytics = ({ stats, user }) => {
           </div>
         </div>
 
-        <div className="flex-1 w-full relative z-10" style={{ minHeight: '150px' }}>
-          <ResponsiveContainer width="100%" aspect={2.5}>
+        <div className="flex-1 w-full relative z-10" style={{ minWidth: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyData.filter(d => d.name.trim() !== '')} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barGap={8}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
               <XAxis 
