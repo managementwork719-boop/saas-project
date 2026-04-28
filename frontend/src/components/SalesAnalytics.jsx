@@ -35,9 +35,17 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const SalesAnalytics = ({ stats, user }) => {
-  // Memoize data transformation to avoid recalculating on every parent render
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
+  // Memoize data transformation
   const monthlyData = React.useMemo(() => {
-    return stats?.months?.map(m => {
+    if (!stats?.months || stats.months.length === 0) return [];
+    
+    // Sort months to ensure correct chronological order
+    const sorted = [...stats.months].sort((a, b) => a._id.localeCompare(b._id));
+    
+    const data = sorted.map(m => {
       const [year, month] = m._id.split('-');
       const date = new Date(year, parseInt(month) - 1);
       const label = date.toLocaleString('default', { month: 'short' });
@@ -49,8 +57,20 @@ const SalesAnalytics = ({ stats, user }) => {
         converted: m.converted || 0,
         received: m.received || 0
       };
-    }) || [];
+    });
+
+    // If only one month of data, add padding points for better visualization in AreaChart
+    if (data.length === 1) {
+       return [
+         { ...data[0], name: '', revenue: 0, leads: 0, converted: 0, received: 0 },
+         data[0],
+         { ...data[0], name: ' ', revenue: 0, leads: 0, converted: 0, received: 0 }
+       ];
+    }
+    return data;
   }, [stats?.months]);
+
+  if (!mounted) return <div className="h-[250px] w-full animate-pulse bg-slate-50 rounded-[24px]" />;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
@@ -74,24 +94,40 @@ const SalesAnalytics = ({ stats, user }) => {
           </div>
         </div>
         
-        <div className="flex-1 w-full relative z-10" style={{ minWidth: 0, minHeight: 0 }}>
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-            <AreaChart data={monthlyData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+        <div className="flex-1 w-full relative z-10" style={{ minHeight: '150px' }}>
+          <ResponsiveContainer width="100%" aspect={2.5}>
+            <AreaChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="neonGradient" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#6366f1" />
                   <stop offset="100%" stopColor="#ec4899" />
                 </linearGradient>
                 <linearGradient id="fillGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.1}/>
+                  <stop offset="0%" stopColor="#6366f1" stopOpacity={0.2}/>
                   <stop offset="100%" stopColor="#6366f1" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="0" vertical={false} stroke="#E2E8F0" opacity={0.2} />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#94a3b8' }} dy={10}/>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} 
+                dy={10}
+                interval={0}
+              />
               <YAxis hide={true} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="revenue" stroke="url(#neonGradient)" strokeWidth={4} fill="url(#fillGradient)" animationDuration={500} dot={false} activeDot={{ r: 6, fill: '#fff', stroke: '#6366f1', strokeWidth: 3 }} />
+              <Area 
+                type="monotone" 
+                dataKey="revenue" 
+                stroke="url(#neonGradient)" 
+                strokeWidth={3} 
+                fill="url(#fillGradient)" 
+                animationDuration={1000} 
+                dot={{ r: 4, fill: '#6366f1', strokeWidth: 2, stroke: '#fff' }} 
+                activeDot={{ r: 6, fill: '#fff', stroke: '#6366f1', strokeWidth: 3 }} 
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -117,15 +153,21 @@ const SalesAnalytics = ({ stats, user }) => {
           </div>
         </div>
 
-        <div className="flex-1 w-full relative z-10" style={{ minWidth: 0, minHeight: 0 }}>
-          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
-            <BarChart data={monthlyData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }} barGap={12}>
-              <CartesianGrid strokeDasharray="0" vertical={false} stroke="#E2E8F0" opacity={0.2} />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 900, fill: '#94a3b8' }} dy={10}/>
+        <div className="flex-1 w-full relative z-10" style={{ minHeight: '150px' }}>
+          <ResponsiveContainer width="100%" aspect={2.5}>
+            <BarChart data={monthlyData.filter(d => d.name.trim() !== '')} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barGap={8}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} 
+                dy={10}
+              />
               <YAxis hide={true} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.02)' }} />
-              <Bar dataKey="leads" name="Leads" fill="#818cf8" radius={[10, 10, 10, 10]} barSize={8} animationDuration={500} />
-              <Bar dataKey="converted" name="Converted" fill="#06b6d4" radius={[10, 10, 10, 10]} barSize={8} className="drop-shadow-[0_0_10px_rgba(6,182,212,0.3)]" animationDuration={800} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99, 102, 241, 0.04)' }} />
+              <Bar dataKey="leads" name="Leads" fill="#818cf8" radius={[4, 4, 0, 0]} barSize={20} animationDuration={1000} />
+              <Bar dataKey="converted" name="Converted" fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={20} className="drop-shadow-[0_0_8px_rgba(6,182,212,0.2)]" animationDuration={1200} />
             </BarChart>
           </ResponsiveContainer>
         </div>
