@@ -25,6 +25,16 @@ const userSchema = new mongoose.Schema({
     enum: ['super-admin', 'admin', 'sales-manager', 'sales-team', 'accounts-manager', 'accounts-team', 'project-manager', 'project-team'],
     default: 'project-team',
   },
+  designation: {
+    type: String,
+    trim: true,
+    default: 'Team Member',
+  },
+  department: {
+    type: String,
+    trim: true,
+    default: 'Operations',
+  },
   companyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',

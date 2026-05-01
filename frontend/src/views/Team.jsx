@@ -19,7 +19,8 @@ import {
   Save,
   Briefcase,
   TrendingUp,
-  ChevronDown
+  ChevronDown,
+  Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AlertCircle, ArrowRight } from 'lucide-react';
@@ -60,10 +61,13 @@ const Team = () => {
     email: '',
     password: '',
     role: 'project-team',
+    designation: '',
+    department: '',
     profilePic: null
   });
 
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     checkSmtp();
@@ -94,7 +98,7 @@ const Team = () => {
   const openAddModal = () => {
     setEditMode(false);
     setSelectedMember(null);
-    setFormData({ name: '', email: '', password: '', role: 'project-team', profilePic: null });
+    setFormData({ name: '', email: '', password: '', role: 'project-team', designation: '', department: '', profilePic: null });
     setPreviewUrl(null);
     setShowRoleDropdown(false);
     setShowModal(true);
@@ -106,7 +110,9 @@ const Team = () => {
     setFormData({ 
       name: member.name, 
       email: member.email, 
-      role: member.role, 
+      role: member.role,
+      designation: member.designation || '',
+      department: member.department || '',
       profilePic: null 
     });
     setPreviewUrl(member.profilePic);
@@ -116,11 +122,13 @@ const Team = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setIsSubmitting(true);
 
     const data = new FormData();
     data.append('name', formData.name);
     data.append('role', formData.role);
+    if (formData.designation) data.append('designation', formData.designation);
+    if (formData.department) data.append('department', formData.department);
     
     // Admin can always change email and password (if provided)
     if (isAdmin) {
@@ -149,7 +157,7 @@ const Team = () => {
     } catch (err) {
       alert(err.response?.data?.message || 'Operation failed');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -430,6 +438,33 @@ const Team = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-0.5">Designation</label>
+                    <div className="relative">
+                      <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                      <input 
+                        type="text" value={formData.designation}
+                        onChange={(e) => setFormData({...formData, designation: e.target.value})}
+                        className="w-full pl-9 pr-4 py-2 bg-slate-50 text-slate-900 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-shadow outline-none transition-all text-xs font-semibold"
+                        placeholder="e.g. Senior Developer"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-0.5">Domain / Department</label>
+                    <div className="relative">
+                      <Layers className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                      <input 
+                        type="text" value={formData.department}
+                        onChange={(e) => setFormData({...formData, department: e.target.value})}
+                        className="w-full pl-9 pr-4 py-2 bg-slate-50 text-slate-900 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-shadow outline-none transition-all text-xs font-semibold"
+                        placeholder="e.g. Frontend"
+                      />
+                    </div>
+                  </div>
+                </div>
+
                  {/* Security Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -503,15 +538,15 @@ const Team = () => {
  
                 <div className="pt-2">
                    <button 
-                      type="submit" disabled={loading}
+                      type="submit" disabled={isSubmitting}
                       className="w-full py-3 bg-brand-primary text-white font-black uppercase tracking-widest text-[10px] rounded-xl hover:bg-brand-hover shadow-lg shadow-brand-shadow active:scale-95 transition-all flex items-center justify-center gap-2"
                    >
-                     {loading ? (
+                     {isSubmitting ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                      ) : (
                         <Save size={18} />
                      )}
-                     <span>{loading ? 'Processing...' : editMode ? 'Update Team Member' : 'Confirm & Add Member'}</span>
+                     <span>{isSubmitting ? 'Processing...' : editMode ? 'Update Team Member' : 'Confirm & Add Member'}</span>
                    </button>
                 </div>
              </form>

@@ -20,6 +20,7 @@ import salesRoutes from './routes/salesRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import activityLogRoutes from './routes/activityLogRoutes.js';
+import projectManagerRoutes from './routes/projectManagerRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -126,6 +127,7 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
+app.use('/api/project-manager', projectManagerRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

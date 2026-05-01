@@ -7,7 +7,7 @@ import { createActivityLog } from '../utils/logger.js';
 
 export const createUser = async (req, res, next) => {
   try {
-    const { name, email, role } = req.body;
+    const { name, email, role, designation, department } = req.body;
     let { password } = req.body;
 
     // 0) Fetch Company SMTP Config and Validate
@@ -31,6 +31,8 @@ export const createUser = async (req, res, next) => {
       email,
       password,
       role,
+      designation,
+      department,
       companyId: req.user.companyId,
       profilePic: req.file ? req.file.path : undefined,
       mustChangePassword: true, // Force new users to change password
@@ -129,7 +131,7 @@ export const getAllUsersByCompany = async (req, res, next) => {
 
 export const updateUser = async (req, res, next) => {
   try {
-    const { name, role, email, password } = req.body;
+    const { name, role, email, password, designation, department } = req.body;
     
     // Find the user first
     const user = await User.findOne({ _id: req.params.id, companyId: req.user.companyId });
@@ -143,6 +145,8 @@ export const updateUser = async (req, res, next) => {
     if (role) user.role = role;
     if (email) user.email = email;
     if (password) user.password = password; // pre-save hook will hash this
+    if (designation !== undefined) user.designation = designation;
+    if (department !== undefined) user.department = department;
     if (req.file) user.profilePic = req.file.path;
 
     await user.save();
