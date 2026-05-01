@@ -1,50 +1,64 @@
 import nodemailer from 'nodemailer';
 import dns from 'dns';
 
-// Force DNS to resolve IPv4 addresses first to avoid ENETUNREACH errors on servers with limited IPv6
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
-
 const sendEmail = async (options) => {
   // 1) Determine SMTP configuration (Dynamic or Default)
   const smtpConfig = options.smtpConfig || {
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: process.env.SMTP_PORT || 587,
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
     senderName: 'Work Management'
   };
 
-  // 2) Create a transporter
-  const transporter = nodemailer.createTransport({
-    host: smtpConfig.host,
-    port: smtpConfig.port,
-    secure: Number(smtpConfig.port) === 465, // true for 465, false for other ports
-    auth: {
-      user: smtpConfig.user,
-      pass: smtpConfig.pass,
-    },
-    // Force IPv4 to avoid ENETUNREACH errors on servers with limited IPv6 support
-    family: 4, 
-    // For many providers, we need to allow self-signed certificates in dev
-    tls: {
-        rejectUnauthorized: false
-    }
-  });
-
-  // 3) Define the email options
-  const mailOptions = {
-    from: `${smtpConfig.senderName || 'Work Management'} <${smtpConfig.user}>`,
-    to: options.email,
-    subject: options.subject,
-    text: options.message,
-    html: options.html,
-  };
-
-  // 4) Actually send the email
   try {
-    console.log(`Attempting to send email to ${options.email} via ${smtpConfig.host}:${smtpConfig.port}...`);
+    // 2) Force DNS Resolution to IPv4 (Crucial for servers like Render/Vercel)
+    let resolvedHost = smtpConfig.host;
+    try {
+        const lookup = await dns.promises.lookup(smtpConfig.host, { family: 4 });
+        resolvedHost = lookup.address;
+        console.log(`Resolved ${smtpConfig.host} to IPv4: ${resolvedHost}`);
+    } catch (dnsErr) {
+        console.warn('DNS lookup failed, using original host:', dnsErr.message);
+    }
+
+    const isSecure = Number(smtpConfig.port) === 465;
+
+    // 3) Create a transporter
+    const transporter = nodemailer.createTransport({
+      pool: true,
+      host: resolvedHost,
+      port: Number(smtpConfig.port),
+      secure: isSecure,
+      auth: {
+        user: smtpConfig.user,
+        pass: smtpConfig.pass,
+      },
+      // Production stability settings
+      family: 4,
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 30000,
+      // Explicit settings for Port 587 (STARTTLS)
+      requireTLS: !isSecure && Number(smtpConfig.port) === 587,
+      tls: {
+          rejectUnauthorized: false,
+          servername: smtpConfig.host, // Important when using IP address as host
+          minVersion: 'TLSv1.2'
+      }
+    });
+
+    // 4) Define the email options
+    const mailOptions = {
+      from: `${smtpConfig.senderName || 'Work Management'} <${smtpConfig.user}>`,
+      to: options.email,
+      subject: options.subject,
+      text: options.message,
+      html: options.html,
+    };
+
+    // 5) Actually send the email
+    console.log(`Attempting to send email to ${options.email} via ${resolvedHost}:${smtpConfig.port}...`);
     const info = await transporter.sendMail(mailOptions);
     console.log(`✅ Email sent successfully: ${info.messageId}`);
     return info;
