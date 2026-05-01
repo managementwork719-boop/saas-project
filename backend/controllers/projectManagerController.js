@@ -239,13 +239,13 @@ export const createProject = async (req, res) => {
   try {
     const { 
       name, client, key, type, category, description, startDate, deadline, 
-      priority, budget, currency, visibility, status, tags, milestones, teamMembers 
+      priority, riskStatus, budget, currency, visibility, status, tags, milestones, teamMembers 
     } = req.body;
     const companyId = req.user.companyId;
 
     const project = await Project.create({
       name, client, key, type, category, description, startDate, deadline, 
-      priority, budget, currency, visibility, status, tags, milestones, teamMembers,
+      priority, riskStatus, budget, currency, visibility, status, tags, milestones, teamMembers,
       companyId,
       manager: req.user._id,
       managerName: req.user.name,

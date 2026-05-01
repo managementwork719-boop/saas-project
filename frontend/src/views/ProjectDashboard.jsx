@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '../components/Skeleton';
+import AddProjectModal from '../components/modals/AddProjectModal';
 
 // --- Subcomponents ---
 
@@ -123,6 +124,7 @@ const ActivityItem = ({ log }) => (
 const ProjectDashboard = () => {
   const { user: authUser } = useAuth();
   const [activeTab, setActiveTab] = useState('All');
+  const [showAddModal, setShowAddModal] = useState(false);
   const sparklineData = Array.from({length: 10}, () => ({value: Math.floor(Math.random() * 100)}));
 
   const { data: dashboardData, isLoading } = useQuery({
@@ -420,7 +422,10 @@ const ProjectDashboard = () => {
           <div className="lg:col-span-5 pr-4">
             <h2 className="text-[12px] font-bold text-slate-900 mb-3">Quick Actions</h2>
             <div className="flex flex-wrap gap-2">
-              <button className="bg-violet-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 hover:bg-violet-700 transition-all shadow-sm">
+              <button 
+                onClick={() => setShowAddModal(true)}
+                className="bg-violet-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 hover:bg-violet-700 transition-all shadow-sm"
+              >
                 <Plus size={14} /> New Project
               </button>
               {[
@@ -455,6 +460,11 @@ const ProjectDashboard = () => {
 
         </div>
       </div>
+      
+      <AddProjectModal 
+        isOpen={showAddModal} 
+        onClose={() => setShowAddModal(false)} 
+      />
       
     </div>
   );

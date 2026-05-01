@@ -73,6 +73,57 @@ const ProjectFilterSidebar = ({ isOpen, onClose, onApply, currentFilters, manage
     setFilters({ ...filters, dateRange: { start, end } });
   };
 
+  const CustomSelect = ({ label, value, onChange, options, icon: Icon, placeholder = 'Select option' }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+      <div className="space-y-2 relative">
+        {label && (
+          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            {Icon && <Icon size={12} />} {label}
+          </label>
+        )}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full px-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl text-xs font-bold text-slate-700 flex items-center justify-between hover:border-violet-200 focus:ring-4 focus:ring-violet-500/5 transition-all bg-white shadow-sm"
+          >
+            <span className={!value ? 'text-slate-400 font-medium' : ''}>
+              {value || placeholder}
+            </span>
+            <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isOpen && (
+            <>
+              <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-100 rounded-2xl shadow-2xl z-[101] py-1.5 animate-in fade-in zoom-in-95 duration-100 origin-top overflow-hidden">
+                <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
+                  {options.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(opt.value);
+                        setIsOpen(false);
+                      }}
+                      className={`w-full px-4 py-2.5 text-left text-xs font-bold flex items-center justify-between transition-colors ${
+                        value === opt.value ? 'bg-violet-50 text-violet-600' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span>{opt.label}</span>
+                      {value === opt.value && <Check size={12} className="text-violet-600" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -130,43 +181,23 @@ const ProjectFilterSidebar = ({ isOpen, onClose, onApply, currentFilters, manage
 
           {/* Selections */}
           <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Briefcase size={12} /> Project
-              </label>
-              <div className="relative group">
-                <select 
-                  value={filters.project}
-                  onChange={e => setFilters({ ...filters, project: e.target.value })}
-                  className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold text-slate-700 outline-none appearance-none focus:border-violet-500 focus:bg-white transition-all cursor-pointer"
-                >
-                  <option value="">All Active Projects</option>
-                  {projects.map(p => (
-                    <option key={p._id} value={p._id}>{p.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              </div>
-            </div>
+            <CustomSelect 
+              label="Project"
+              icon={Briefcase}
+              value={projects.find(p => p._id === filters.project)?.name}
+              placeholder="All Active Projects"
+              onChange={(val) => setFilters({ ...filters, project: val })}
+              options={projects.map(p => ({ label: p.name, value: p._id }))}
+            />
 
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <User size={12} /> Manager
-              </label>
-              <div className="relative group">
-                <select 
-                  value={filters.manager}
-                  onChange={e => setFilters({ ...filters, manager: e.target.value })}
-                  className="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold text-slate-700 outline-none appearance-none focus:border-violet-500 focus:bg-white transition-all cursor-pointer"
-                >
-                  <option value="">All Managers</option>
-                  {managers.map(m => (
-                    <option key={m.id} value={m.name}>{m.name}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              </div>
-            </div>
+            <CustomSelect 
+              label="Manager"
+              icon={User}
+              value={filters.manager}
+              placeholder="All Managers"
+              onChange={(val) => setFilters({ ...filters, manager: val })}
+              options={managers.map(m => ({ label: m.name, value: m.name }))}
+            />
           </div>
 
           {/* Status Grid */}
@@ -231,16 +262,15 @@ const ProjectFilterSidebar = ({ isOpen, onClose, onApply, currentFilters, manage
               <Calendar size={12} /> Timeline
             </label>
             <div className="grid grid-cols-2 gap-3">
-               <div className="col-span-2 relative">
-                <select 
-                  onChange={e => handleDatePreset(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-500 outline-none appearance-none focus:border-violet-500 transition-all"
-                >
-                  <option value="">Presets</option>
-                  <option value="This Month">This Month</option>
-                  <option value="Last Month">Last Month</option>
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
+               <div className="col-span-2">
+                <CustomSelect 
+                  placeholder="Date Presets"
+                  onChange={val => handleDatePreset(val)}
+                  options={[
+                    { label: 'This Month', value: 'This Month' },
+                    { label: 'Last Month', value: 'Last Month' }
+                  ]}
+                />
                </div>
                <div className="space-y-1">
                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">From</span>

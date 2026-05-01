@@ -30,6 +30,7 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
     budget: '',
     currency: 'INR (Indian Rupee)',
     visibility: 'visible',
+    customType: '',
     milestones: []
   });
 
@@ -70,7 +71,11 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
         description: project.description || '',
         category: project.category || 'Development',
         priority: project.priority || 'Medium',
-        status: project.riskStatus || 'On Track',
+        status: project.status === 'completed' ? 'Completed' : (
+          project.riskStatus === 'on-track' ? 'On Track' : 
+          project.riskStatus === 'at-risk' ? 'At Risk' : 
+          project.riskStatus === 'delayed' ? 'Delayed' : 'On Track'
+        ),
         tags: project.tags || [],
         startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         endDate: project.deadline ? new Date(project.deadline).toISOString().split('T')[0] : new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString().split('T')[0],
@@ -79,9 +84,10 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
         visibility: project.visibility || 'visible',
         milestones: project.milestones?.map(m => ({ ...m, id: m._id || Date.now() + Math.random() })) || []
       });
-      // Populate selected team
-      if (project.teamMembers && teamData) {
-          const members = teamData.filter(m => project.teamMembers.includes(m._id));
+      // Populate selected team with a more robust check
+      if (project.teamMembers && teamData?.length > 0) {
+          const projectMemberIds = project.teamMembers.map(m => typeof m === 'object' ? m._id?.toString() : m.toString());
+          const members = teamData.filter(m => projectMemberIds.includes(m._id?.toString()));
           setSelectedTeam(members);
       }
     } else {
@@ -98,10 +104,63 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
     }
   }, [project, isOpen, !!teamData]);
 
-  const calculateDuration = () => {
-    if (!formData.startDate || !formData.endDate) return 0;
-    const diff = new Date(formData.endDate) - new Date(formData.startDate);
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const getDuration = () => {
+    const start = new Date(formData.startDate);
+    const end = new Date(formData.endDate);
+    const diffTime = Math.abs(end - start);
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const CustomSelect = ({ label, value, onChange, options, icon: Icon, colorDot }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+      <div className="space-y-1.5 relative">
+        <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{label}</label>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center justify-between hover:border-violet-200 focus:ring-4 focus:ring-violet-500/5 transition-all bg-white"
+          >
+            <div className="flex items-center gap-2">
+              {colorDot && <div className={`w-1.5 h-1.5 rounded-full ${colorDot}`} />}
+              {Icon && <Icon size={12} className="text-slate-400" />}
+              <span>{value || 'Select option'}</span>
+            </div>
+            <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isOpen && (
+            <>
+              <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-2xl z-[999] py-2 animate-in fade-in zoom-in-95 duration-150 origin-top overflow-hidden ring-1 ring-slate-900/5">
+                <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                  {options.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(opt.value);
+                        setIsOpen(false);
+                      }}
+                      className={`w-full px-3 py-2 text-left text-xs font-bold flex items-center justify-between transition-colors ${
+                        value === opt.value ? 'bg-violet-50 text-violet-600' : 'text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {opt.colorDot && <div className={`w-1.5 h-1.5 rounded-full ${opt.colorDot}`} />}
+                        <span>{opt.label}</span>
+                      </div>
+                      {value === opt.value && <Check size={12} className="text-violet-600" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const createMutation = useMutation({
@@ -182,7 +241,7 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
       name: formData.name,
       client: formData.client,
       key: formData.key,
-      type: formData.type,
+      type: formData.type === 'Other' ? formData.customType : formData.type,
       category: formData.category,
       description: formData.description,
       startDate: new Date(formData.startDate),
@@ -191,7 +250,8 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
       budget: parseInt(formData.budget.toString().replace(/,/g, '')) || 0,
       currency: formData.currency,
       visibility: formData.visibility,
-      status: formData.status === 'On Track' ? 'active' : 'active',
+      riskStatus: formData.status === 'On Track' ? 'on-track' : (formData.status === 'At Risk' ? 'at-risk' : (formData.status === 'Completed' ? 'on-track' : 'delayed')),
+      status: formData.status === 'Completed' ? 'completed' : 'active',
       tags: formData.tags,
       milestones: formData.milestones.map(m => ({
         name: m.name, date: new Date(m.date), day: m.day, color: m.color
@@ -208,13 +268,56 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
     { id: 4, title: 'Review & Create' }
   ];
 
+  const CATEGORY_MAPPING = {
+    'Development': [
+      "Website Development", "Web Application", "Mobile App Development", "E-commerce Store", "CRM Development", 
+      "ERP System", "Frontend Project", "Backend Project", "Full Stack Project", "API Development", 
+      "WordPress Website", "Shopify Store", "SaaS Platform", "Bug Fixing", "Maintenance", 
+      "Custom Software", "AI Integration", "Automation Tool", "Other"
+    ],
+    'Marketing': [
+      "SEO Project", "Local SEO", "Google Ads Campaign", "Facebook Ads", "Instagram Marketing", 
+      "Social Media Marketing", "Lead Generation", "Email Marketing", "Content Marketing", 
+      "Brand Awareness", "Product Launch Campaign", "Influencer Marketing", "Other"
+    ],
+    'Design': [
+      "UI Design", "UX Design", "Website Design", "Mobile App Design", "Dashboard Design", 
+      "Landing Page Design", "Logo Design", "Brand Identity", "Graphic Design", 
+      "Packaging Design", "Wireframing", "Prototype Design", "Social Media Creatives", "Other"
+    ],
+    'Operations': [
+      "Internal Management", "Workflow Automation", "Process Optimization", "Documentation Setup", 
+      "Team Management", "Vendor Management", "Inventory Management", "Resource Planning", 
+      "Performance Monitoring", "Support Operations", "Other"
+    ],
+    'Business': [
+      "Sales Campaign", "Client Acquisition", "Business Expansion", "Partnership Project", 
+      "Revenue Growth Plan", "CRM Sales Process", "Market Research", "Competitor Analysis", 
+      "Startup Planning", "Business Strategy", "Other"
+    ],
+    'Other': [
+      "Custom Project", "Experimental Project", "Research Project", "Consulting Work", 
+      "Freelance Work", "Miscellaneous", "Other"
+    ]
+  };
+
   const categories = [
-    { id: 'Development', icon: Cpu, sub: 'Software / Product development', color: 'text-violet-600', bg: 'bg-violet-50' },
-    { id: 'IT Operations', icon: Layout, sub: 'Infrastructure & operations', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { id: 'Development', icon: Cpu, sub: 'Software / Product dev', color: 'text-violet-600', bg: 'bg-violet-50' },
     { id: 'Marketing', icon: Zap, sub: 'Campaigns & growth', color: 'text-pink-600', bg: 'bg-pink-50' },
     { id: 'Design', icon: Palette, sub: 'UI/UX & Creative', color: 'text-blue-600', bg: 'bg-blue-50' },
-    { id: 'Other', icon: Layers, sub: 'Other project type', color: 'text-slate-600', bg: 'bg-slate-50' }
+    { id: 'Operations', icon: Layout, sub: 'Process & team', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { id: 'Business', icon: Briefcase, sub: 'Sales & strategy', color: 'text-orange-600', bg: 'bg-orange-50' },
+    { id: 'Other', icon: Layers, sub: 'Custom project type', color: 'text-slate-600', bg: 'bg-slate-50' }
   ];
+
+  const handleCategoryChange = (catId) => {
+    const subCategories = CATEGORY_MAPPING[catId] || [];
+    setFormData({
+        ...formData, 
+        category: catId,
+        type: subCategories[0] || ''
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
@@ -249,52 +352,16 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto px-6 pb-5 custom-scrollbar min-h-[300px]">
+        <div className="flex-1 overflow-y-auto px-6 pb-20 custom-scrollbar min-h-[400px]">
           {step === 1 && (
             <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Project Name <span className="text-rose-500">*</span></label>
-                  <input type="text" placeholder="Enter project name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm placeholder:text-slate-400" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Client / Department <span className="text-rose-500">*</span></label>
-                  <input type="text" placeholder="Enter client or department name" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm placeholder:text-slate-400" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Key (Optional)</label>
-                  <input type="text" placeholder="e.g. NEX-CRM" value={formData.key} onChange={(e) => setFormData({...formData, key: e.target.value.toUpperCase()})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm placeholder:text-slate-400 uppercase" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Project Type <span className="text-rose-500">*</span></label>
-                  <div className="relative">
-                    <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm appearance-none">
-                      <option value="">Select project type</option>
-                      <option value="Software Development">Software Development</option>
-                      <option value="Cloud Infrastructure">Cloud Infrastructure</option>
-                      <option value="Marketing Campaign">Marketing Campaign</option>
-                      <option value="Internal Operations">Internal Operations</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Project Description <span className="text-rose-500">*</span></label>
-                <div className="relative">
-                  <textarea placeholder="Describe the project, goals, and key deliverables..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows={3} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm placeholder:text-slate-400 resize-none" />
-                  <span className="absolute bottom-2 right-3 text-[9px] font-bold text-slate-300 tracking-widest">{formData.description.length}/500</span>
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Category</label>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-6 gap-2">
                   {categories.map((cat) => (
                     <div 
                       key={cat.id} 
-                      onClick={() => setFormData({...formData, category: cat.id})}
+                      onClick={() => handleCategoryChange(cat.id)}
                       className={`p-2.5 rounded-xl border transition-all cursor-pointer group flex flex-col gap-2 ${formData.category === cat.id ? 'border-violet-600 ring-1 ring-violet-600 shadow-sm' : 'border-slate-100 hover:border-violet-200'}`}
                     >
                       <div className="flex justify-between items-start">
@@ -314,29 +381,74 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Priority <span className="text-rose-500">*</span></label>
-                  <div className="relative">
-                    <Flag size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-500" />
-                    <select value={formData.priority} onChange={(e) => setFormData({...formData, priority: e.target.value})} className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm appearance-none">
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  </div>
+                  <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Project Name <span className="text-rose-500">*</span></label>
+                  <input type="text" placeholder="Enter project name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm placeholder:text-slate-400" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Initial Status <span className="text-rose-500">*</span></label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm appearance-none">
-                      <option value="On Track">On Track</option>
-                      <option value="At Risk">At Risk</option>
-                      <option value="Delayed">Delayed</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  </div>
+                  <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Client / Department <span className="text-rose-500">*</span></label>
+                  <input type="text" placeholder="Enter client or department name" value={formData.client} onChange={(e) => setFormData({...formData, client: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm placeholder:text-slate-400" />
                 </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Project Key (Optional)</label>
+                  <input type="text" placeholder="e.g. NEX-CRM" value={formData.key} onChange={(e) => setFormData({...formData, key: e.target.value.toUpperCase()})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm placeholder:text-slate-400 uppercase" />
+                </div>
+                <CustomSelect 
+                  label="Project Type *"
+                  value={formData.type}
+                  onChange={(val) => setFormData({...formData, type: val})}
+                  options={(CATEGORY_MAPPING[formData.category] || []).map(t => ({ label: t, value: t }))}
+                />
+              </div>
+
+              {formData.type === 'Other' && (
+                <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-200">
+                  <label className="text-[10px] font-black text-violet-600 uppercase tracking-widest">Custom Project Type Name <span className="text-rose-500">*</span></label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter your custom project type here..." 
+                    value={formData.customType} 
+                    onChange={(e) => setFormData({...formData, customType: e.target.value})} 
+                    className="w-full px-3 py-2 bg-violet-50/30 border border-violet-100 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm placeholder:text-slate-400" 
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Project Description <span className="text-rose-500">*</span></label>
+                <div className="relative">
+                  <textarea placeholder="Describe the project, goals, and key deliverables..." value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} rows={3} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500 outline-none transition-all shadow-sm placeholder:text-slate-400 resize-none" />
+                  <span className="absolute bottom-2 right-3 text-[9px] font-bold text-slate-300 tracking-widest">{formData.description.length}/500</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <CustomSelect 
+                  label="Priority *"
+                  value={formData.priority}
+                  onChange={(val) => setFormData({...formData, priority: val})}
+                  icon={Flag}
+                  options={[
+                    { label: 'High', value: 'High' },
+                    { label: 'Medium', value: 'Medium' },
+                    { label: 'Low', value: 'Low' }
+                  ]}
+                />
+                <CustomSelect 
+                  label="Initial Status *"
+                  value={formData.status}
+                  onChange={(val) => setFormData({...formData, status: val})}
+                  colorDot={
+                    formData.status === 'On Track' ? 'bg-emerald-500' : 
+                    formData.status === 'At Risk' ? 'bg-orange-500' : 
+                    formData.status === 'Delayed' ? 'bg-rose-500' : 'bg-blue-500'
+                  }
+                  options={[
+                    { label: 'On Track', value: 'On Track', colorDot: 'bg-emerald-500' },
+                    { label: 'At Risk', value: 'At Risk', colorDot: 'bg-orange-500' },
+                    { label: 'Delayed', value: 'Delayed', colorDot: 'bg-rose-500' },
+                    { label: 'Completed', value: 'Completed', colorDot: 'bg-blue-500' }
+                  ]}
+                />
               </div>
             </div>
           )}
@@ -477,7 +589,7 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Project Duration</label>
                       <div className="relative">
                         <Clock size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-violet-600" />
-                        <input type="text" value={`${calculateDuration()} Days`} readOnly className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-100 rounded-lg text-xs outline-none text-slate-500 font-bold" />
+                        <input type="text" value={`${getDuration()} Days`} readOnly className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-100 rounded-lg text-xs outline-none text-slate-500 font-bold" />
                       </div>
                     </div>
                   </div>
@@ -548,18 +660,17 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
                     <h4 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Settings</h4>
                   </div>
                   <div className="space-y-3">
-                    <div className="space-y-1.5">
-                       <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Currency</label>
-                       <div className="relative">
-                          <select value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-[10px] outline-none appearance-none focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500">
-                            <option value="INR (Indian Rupee)">INR (Indian Rupee)</option>
-                            <option value="USD (US Dollar)">USD (US Dollar)</option>
-                            <option value="EUR (Euro)">EUR (Euro)</option>
-                            <option value="GBP (British Pound)">GBP (British Pound)</option>
-                          </select>
-                          <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                       </div>
-                    </div>
+                    <CustomSelect 
+                      label="Currency"
+                      value={formData.currency}
+                      onChange={(val) => setFormData({...formData, currency: val})}
+                      options={[
+                        { label: 'INR (Indian Rupee)', value: 'INR (Indian Rupee)' },
+                        { label: 'USD (US Dollar)', value: 'USD (US Dollar)' },
+                        { label: 'EUR (Euro)', value: 'EUR (Euro)' },
+                        { label: 'GBP (British Pound)', value: 'GBP (British Pound)' }
+                      ]}
+                    />
                     <div className="space-y-2">
                        <p className="text-[9px] font-black text-slate-900 uppercase tracking-widest">Visibility</p>
                        <div className="space-y-1.5">

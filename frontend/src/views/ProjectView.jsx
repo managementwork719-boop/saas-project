@@ -130,10 +130,11 @@ const ProjectView = () => {
     return projects
       .filter(p => {
         if (activeTab === 'All Projects') return true;
+        if (activeTab === 'Completed') return p.status === 'completed';
+        if (p.status === 'completed') return false; // Exclude completed from other health tabs
         if (activeTab === 'On Track') return p.riskStatus === 'on-track';
         if (activeTab === 'At Risk') return p.riskStatus === 'at-risk';
         if (activeTab === 'Delayed') return p.riskStatus === 'delayed';
-        if (activeTab === 'Completed') return p.riskStatus === 'completed';
         return true;
       })
       .filter(p => {
@@ -204,10 +205,10 @@ const ProjectView = () => {
 
   const stats = useMemo(() => ({
     total: projects.length,
-    onTrack: projects.filter(p => p.riskStatus === 'on-track').length,
-    atRisk: projects.filter(p => p.riskStatus === 'at-risk').length,
-    delayed: projects.filter(p => p.riskStatus === 'delayed').length,
-    completed: projects.filter(p => p.riskStatus === 'completed').length
+    onTrack: projects.filter(p => p.riskStatus === 'on-track' && p.status !== 'completed').length,
+    atRisk: projects.filter(p => p.riskStatus === 'at-risk' && p.status !== 'completed').length,
+    delayed: projects.filter(p => p.riskStatus === 'delayed' && p.status !== 'completed').length,
+    completed: projects.filter(p => p.status === 'completed').length
   }), [projects]);
 
   const activeFiltersCount = useMemo(() => {
@@ -368,7 +369,7 @@ const ProjectView = () => {
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-violet-50 text-violet-600"><Briefcase size={16} /></div>
                         <div>
                           <p className="text-[12px] font-bold text-slate-900 leading-tight">{project.name}</p>
-                          <p className="text-[9px] font-medium text-slate-400 mt-0.5">{project.subTitle || 'Project Implementation'}</p>
+                          <p className="text-[9px] font-medium text-slate-400 mt-0.5">{project.type || project.category}</p>
                         </div>
                       </div>
                     </td>
@@ -381,7 +382,7 @@ const ProjectView = () => {
                         <span className="text-[11px] font-bold text-slate-700">{project.managerName}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-2.5">{getStatusBadge(project.riskStatus)}</td>
+                    <td className="px-3 py-2.5">{getStatusBadge(project.status === 'completed' ? 'completed' : project.riskStatus)}</td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2 min-w-[100px]">
                         <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
