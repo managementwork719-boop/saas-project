@@ -31,6 +31,9 @@ connectRedis();
 
 const app = express();
 
+// Trust proxy for Render/Vercel
+app.set('trust proxy', 1);
+
 // 1. GLOBAL MIDDLEWARES
 
 // Compress API responses
@@ -47,13 +50,15 @@ if (process.env.NODE_ENV !== 'production') {
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL, 
+    'https://worksensy.vercel.app',
+    'https://worksensy.vercel.app/',
     'http://localhost:3000', 
     'http://localhost:5173',
     'http://127.0.0.1:3000'
   ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With', 'Accept'],
 }));
 
 // Set security HTTP headers

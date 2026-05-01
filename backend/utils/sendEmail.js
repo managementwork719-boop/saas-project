@@ -1,4 +1,10 @@
 import nodemailer from 'nodemailer';
+import dns from 'dns';
+
+// Force DNS to resolve IPv4 addresses first to avoid ENETUNREACH errors on servers with limited IPv6
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 const sendEmail = async (options) => {
   // 1) Determine SMTP configuration (Dynamic or Default)
