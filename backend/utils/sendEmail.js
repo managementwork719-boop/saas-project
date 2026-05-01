@@ -19,6 +19,8 @@ const sendEmail = async (options) => {
       user: smtpConfig.user,
       pass: smtpConfig.pass,
     },
+    // Force IPv4 to avoid ENETUNREACH errors on servers with limited IPv6 support
+    family: 4, 
     // For many providers, we need to allow self-signed certificates in dev
     tls: {
         rejectUnauthorized: false
