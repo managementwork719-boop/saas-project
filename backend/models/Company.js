@@ -70,6 +70,7 @@ const companySchema = new mongoose.Schema({
       select: false,
     },
     senderName: String,
+    senderEmail: String,
   },
 });
 

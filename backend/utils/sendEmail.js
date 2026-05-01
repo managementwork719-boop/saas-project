@@ -35,7 +35,7 @@ const sendEmail = async (options) => {
 
   // 3) Define the email options
   const mailOptions = {
-    from: `${smtpConfig.senderName || 'Work Management'} <${smtpConfig.user}>`,
+    from: `${smtpConfig.senderName || 'Work Management'} <${smtpConfig.senderEmail || smtpConfig.user}>`,
     to: options.email,
     subject: options.subject,
     text: options.message,

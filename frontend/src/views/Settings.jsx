@@ -84,7 +84,8 @@ const Settings = () => {
                         port: company.smtpConfig.port || 465,
                         user: company.smtpConfig.user || '',
                         pass: '', 
-                        senderName: company.smtpConfig.senderName || company.name || ''
+                        senderName: company.smtpConfig.senderName || company.name || '',
+                        senderEmail: company.smtpConfig.senderEmail || company.smtpConfig.user || ''
                     });
                 }
                 // Set Branding/Identity
@@ -199,6 +200,19 @@ const Settings = () => {
     setLoading(true);
     try {
         await API.patch('/companies/my-company/smtp', smtpData);
+        // Fetch latest data to refresh the UI state
+        const res = await API.get('/companies/my-company');
+        const company = res.data.data.company;
+        if (company && company.smtpConfig) {
+            setSmtpData({
+                host: company.smtpConfig.host || '',
+                port: company.smtpConfig.port || 587,
+                user: company.smtpConfig.user || '',
+                pass: '', 
+                senderName: company.smtpConfig.senderName || '',
+                senderEmail: company.smtpConfig.senderEmail || ''
+            });
+        }
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -696,14 +710,25 @@ const Settings = () => {
                        </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">Sender Display Name</label>
-                       <input 
-                         type="text" required value={smtpData.senderName}
-                         placeholder="e.g. Work Management Team"
-                         onChange={(e) => setSmtpData({...smtpData, senderName: e.target.value})}
-                         className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:ring-2 focus:ring-brand-shadow focus:border-brand-primary outline-none transition-all font-semibold text-slate-900 text-sm"
-                       />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                       <div className="space-y-1.5">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">Sender Display Name</label>
+                          <input 
+                            type="text" required value={smtpData.senderName}
+                            placeholder="e.g. Work Management Team"
+                            onChange={(e) => setSmtpData({...smtpData, senderName: e.target.value})}
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:ring-2 focus:ring-brand-shadow focus:border-brand-primary outline-none transition-all font-semibold text-slate-900 text-sm"
+                          />
+                       </div>
+                       <div className="space-y-1.5">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">Sender Email (Verified in Brevo)</label>
+                          <input 
+                            type="email" required value={smtpData.senderEmail || ''}
+                            placeholder="shashibrandmingo@gmail.com"
+                            onChange={(e) => setSmtpData({...smtpData, senderEmail: e.target.value})}
+                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:ring-2 focus:ring-brand-shadow focus:border-brand-primary outline-none transition-all font-semibold text-slate-900 text-sm"
+                          />
+                       </div>
                     </div>
 
                     {testStatus && (

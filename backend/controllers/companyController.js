@@ -52,7 +52,7 @@ export const getMyCompany = async (req, res, next) => {
 };
 export const updateSmtpSettings = async (req, res, next) => {
     try {
-        const { host, port, user, pass, senderName } = req.body;
+        const { host, port, user, pass, senderName, senderEmail } = req.body;
         const companyId = req.user.companyId;
 
         if (!host || !port || !user || !pass) {
@@ -69,7 +69,8 @@ export const updateSmtpSettings = async (req, res, next) => {
                     port,
                     user,
                     pass: encryptedPass,
-                    senderName: senderName || req.user.companyId.name
+                    senderName: senderName || 'Work Management',
+                    senderEmail: senderEmail || user
                 }
             },
             { returnDocument: 'after', runValidators: true }
@@ -87,14 +88,14 @@ export const updateSmtpSettings = async (req, res, next) => {
 
 export const testSmtpSettings = async (req, res, next) => {
     try {
-        const { host, port, user, pass, senderName } = req.body;
+        const { host, port, user, pass, senderName, senderEmail } = req.body;
 
         await sendEmail({
             email: req.user.email,
             subject: 'System: SMTP Connection Test',
             message: 'If you are reading this, your SMTP configuration is correct.',
             html: '<h3>Connection Verified</h3><p>Your SMTP settings are working perfectly.</p>',
-            smtpConfig: { host, port, user, pass, senderName }
+            smtpConfig: { host, port, user, pass, senderName, senderEmail }
         });
 
         res.status(200).json({

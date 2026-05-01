@@ -60,15 +60,18 @@ export const createUser = async (req, res, next) => {
             </div>
         `;
 
+        // Convert Mongoose subdoc to plain object to avoid spread issues
+        const smtpConfigPlain = company.smtpConfig ? company.smtpConfig.toObject() : null;
+
         await sendEmail({
             email,
             subject: 'System Onboarding: Your New Account',
             message: `Welcome! Your temp password is: ${password}. Setup here: ${setupLink}`,
             html: html,
-            smtpConfig: {
-                ...company.smtpConfig,
+            smtpConfig: smtpConfigPlain ? {
+                ...smtpConfigPlain,
                 pass: decryptedSmtpPass
-            }
+            } : null
         });
     } catch (emailErr) {
         console.error('Onboarding email failed:', emailErr);
