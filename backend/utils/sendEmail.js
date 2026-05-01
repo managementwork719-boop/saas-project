@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 const sendEmail = async (options) => {
   // 1) Determine SMTP configuration (Dynamic or Default)
   const smtpConfig = options.smtpConfig || {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host: process.env.SMTP_HOST || '74.125.200.108', // Hardcoded Gmail SMTP IP for testing
     port: process.env.SMTP_PORT || 587,
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
