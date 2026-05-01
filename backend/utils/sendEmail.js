@@ -23,10 +23,11 @@ const sendEmail = async (options) => {
     },
     // Production stability settings
     family: 4, // Still force IPv4 to be safe
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    // Explicit STARTTLS for Port 587
-    requireTLS: !isSecure && Number(smtpConfig.port) === 587,
+    connectionTimeout: 30000, // Increased to 30 seconds
+    greetingTimeout: 30000,
+    socketTimeout: 45000,
+    // Explicit STARTTLS for Port 587/2525
+    requireTLS: !isSecure && [587, 2525].includes(Number(smtpConfig.port)),
     tls: {
         rejectUnauthorized: false,
         minVersion: 'TLSv1.2'
