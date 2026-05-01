@@ -648,7 +648,7 @@ const Settings = () => {
                         </div>
                         <div>
                             <h3 className="text-base font-black text-slate-900 tracking-tight">Mailing Engine</h3>
-                            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-0.5 italic">Required for Team Onboarding</p>
+                            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-0.5 italic">Recommended: Brevo SMTP Relay</p>
                         </div>
                     </div>
                 </div>
@@ -659,7 +659,7 @@ const Settings = () => {
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">SMTP Host</label>
                           <input 
                             type="text" required value={smtpData.host}
-                            placeholder="e.g. smtp.gmail.com"
+                            placeholder="e.g. smtp-relay.brevo.com"
                             onChange={(e) => setSmtpData({...smtpData, host: e.target.value})}
                             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:ring-2 focus:ring-brand-shadow focus:border-brand-primary outline-none transition-all font-semibold text-slate-900 text-sm"
                           />
@@ -668,7 +668,7 @@ const Settings = () => {
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">Port</label>
                           <input 
                             type="number" required value={smtpData.port}
-                            placeholder="465 or 587"
+                            placeholder="587 (Recommended)"
                             onChange={(e) => setSmtpData({...smtpData, port: parseInt(e.target.value)})}
                             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:ring-2 focus:ring-brand-shadow focus:border-brand-primary outline-none transition-all font-semibold text-slate-900 text-sm"
                           />
@@ -677,19 +677,19 @@ const Settings = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">SMTP Identity (Email)</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">SMTP Identity (Brevo Email)</label>
                           <input 
                             type="email" required value={smtpData.user}
-                            placeholder="your@company.com"
+                            placeholder="login@smtp-brevo.com"
                             onChange={(e) => setSmtpData({...smtpData, user: e.target.value})}
                             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:ring-2 focus:ring-brand-shadow focus:border-brand-primary outline-none transition-all font-semibold text-slate-900 text-sm"
                           />
                        </div>
                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">Identity Pass / App Password</label>
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">SMTP Key / Master Password</label>
                           <input 
                             type="password" required={!smtpData.host} value={smtpData.pass}
-                            placeholder="••••••••••••••••"
+                            placeholder="Brevo SMTP Key (Long string)"
                             onChange={(e) => setSmtpData({...smtpData, pass: e.target.value})}
                             className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:ring-2 focus:ring-brand-shadow focus:border-brand-primary outline-none transition-all font-mono text-slate-900 text-sm"
                           />
@@ -697,10 +697,10 @@ const Settings = () => {
                     </div>
 
                     <div className="space-y-1.5">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">Sender Identity Name</label>
+                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-0.5">Sender Display Name</label>
                        <input 
                          type="text" required value={smtpData.senderName}
-                         placeholder="e.g. Acme Corp HR"
+                         placeholder="e.g. Work Management Team"
                          onChange={(e) => setSmtpData({...smtpData, senderName: e.target.value})}
                          className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:ring-2 focus:ring-brand-shadow focus:border-brand-primary outline-none transition-all font-semibold text-slate-900 text-sm"
                        />

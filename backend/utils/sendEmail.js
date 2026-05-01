@@ -1,29 +1,35 @@
 import nodemailer from 'nodemailer';
 
 const sendEmail = async (options) => {
-  // 1) Determine SMTP configuration (Dynamic or Default)
+  // 1) Determine SMTP configuration (Dynamic from DB or Default from Env)
   const smtpConfig = options.smtpConfig || {
-    host: process.env.SMTP_HOST || '74.125.200.108', // Hardcoded Gmail SMTP IP for testing
+    host: process.env.SMTP_HOST || 'smtp-relay.sendinblue.com',
     port: process.env.SMTP_PORT || 587,
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
     senderName: 'Work Management'
   };
 
-  // 2) Create a transporter
+  const isSecure = Number(smtpConfig.port) === 465;
+
+  // 2) Create a transporter optimized for Production Relays (Brevo/SendGrid)
   const transporter = nodemailer.createTransport({
     host: smtpConfig.host,
     port: Number(smtpConfig.port),
-    secure: Number(smtpConfig.port) === 465, // true for 465, false for other ports
+    secure: isSecure, 
     auth: {
       user: smtpConfig.user,
       pass: smtpConfig.pass,
     },
-    // Force IPv4 to avoid ENETUNREACH errors
-    family: 4, 
-    // For many providers, we need to allow self-signed certificates in dev
+    // Production stability settings
+    family: 4, // Still force IPv4 to be safe
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    // Explicit STARTTLS for Port 587
+    requireTLS: !isSecure && Number(smtpConfig.port) === 587,
     tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
+        minVersion: 'TLSv1.2'
     }
   });
 
@@ -38,9 +44,8 @@ const sendEmail = async (options) => {
 
   // 4) Actually send the email
   try {
-    console.log(`Attempting to send email to ${options.email} via ${smtpConfig.host}:${smtpConfig.port}...`);
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent successfully: ${info.messageId}`);
+    console.log(`✅ Email sent successfully to ${options.email}: ${info.messageId}`);
     return info;
   } catch (error) {
     console.error('❌ Email Send Error:', error.message);
