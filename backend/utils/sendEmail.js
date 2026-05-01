@@ -44,11 +44,19 @@ const sendEmail = async (options) => {
 
   // 4) Actually send the email
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Email sent successfully to ${options.email} via ${smtpConfig.host}`);
+    console.log(`Attempting to send email to ${options.email} via ${smtpConfig.host}:${smtpConfig.port}...`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Email sent successfully: ${info.messageId}`);
+    return info;
   } catch (error) {
-    console.error('Email send failed:', error);
-    throw new Error(`Error sending email: ${error.message}`);
+    console.error('❌ Email Send Error Details:', {
+        message: error.message,
+        code: error.code,
+        command: error.command,
+        response: error.response,
+        stack: error.stack
+    });
+    throw error;
   }
 };
 
