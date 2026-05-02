@@ -5,20 +5,26 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Configure Cloudinary
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'demo',
-  api_key: process.env.CLOUDINARY_API_KEY || 'demo',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'demo',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Configure Multer Storage
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'work-management-team',
-    allowed_formats: ['jpg', 'png', 'jpeg'],
-    transformation: [{ width: 500, height: 500, crop: 'limit' }],
+  params: async (req, file) => {
+    // Keep original filename but make it unique
+    const originalName = file.originalname.split('.')[0].replace(/[^a-zA-Z0-9]/g, '_');
+    const extension = file.originalname.split('.').pop();
+    const uniqueId = Math.floor(1000 + Math.random() * 9000);
+    const publicId = `${originalName}_${uniqueId}.${extension}`;
+
+    return {
+      folder: 'work-management-system',
+      resource_type: 'raw', // Enforce raw for documents to avoid transformation issues
+      public_id: publicId
+    };
   },
 });
 

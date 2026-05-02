@@ -7,6 +7,38 @@ const milestoneSchema = new mongoose.Schema({
   color: { type: String, default: 'bg-violet-500' }
 }, { _id: true });
 
+const riskSchema = new mongoose.Schema({
+  title: String,
+  severity: { type: String, enum: ['High', 'Medium', 'Low'], default: 'Medium' },
+  status: { type: String, default: 'Open' }
+}, { _id: true });
+
+const noteSchema = new mongoose.Schema({
+  title: String,
+  content: String,
+  date: { type: Date, default: Date.now },
+  addedBy: String,
+  fileUrl: String,
+  publicId: String,
+  resourceType: { type: String, default: 'raw' }
+}, { _id: true });
+
+const linkSchema = new mongoose.Schema({
+  title: String,
+  url: String,
+  category: String
+}, { _id: true });
+
+const projectDocSchema = new mongoose.Schema({
+  name: String,
+  type: String,
+  url: String,
+  publicId: String,
+  resourceType: { type: String, default: 'raw' },
+  date: { type: Date, default: Date.now },
+  addedBy: String
+}, { _id: true });
+
 const projectSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   client: { type: String, required: true, trim: true },
@@ -46,6 +78,10 @@ const projectSchema = new mongoose.Schema({
   tags: [{ type: String }],
   milestones: [milestoneSchema],
   teamMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  risks: [riskSchema],
+  notes: [noteSchema],
+  links: [linkSchema],
+  documents: [projectDocSchema],
   companyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',
@@ -57,6 +93,7 @@ const projectSchema = new mongoose.Schema({
 projectSchema.index({ companyId: 1, status: 1 });
 projectSchema.index({ companyId: 1, deadline: 1 });
 projectSchema.index({ companyId: 1, riskStatus: 1 });
+projectSchema.index({ name: 'text', client: 'text', managerName: 'text' });
 
 const Project = mongoose.model('Project', projectSchema);
 export default Project;

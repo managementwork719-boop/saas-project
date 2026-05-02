@@ -174,7 +174,9 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['pmProjects']);
+      queryClient.invalidateQueries({ queryKey: ['pmProjectsList'] });
+      queryClient.invalidateQueries({ queryKey: ['pmProjectDetails'] });
+      queryClient.invalidateQueries({ queryKey: ['pmDashboard'] });
       setStep(1);
       setFormData({...formData, name: '', client: '', description: '', budget: '', milestones: [], tags: []});
       setSelectedTeam([]);
@@ -256,7 +258,10 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
       milestones: formData.milestones.map(m => ({
         name: m.name, date: new Date(m.date), day: m.day, color: m.color
       })),
-      teamMembers: selectedTeam.map(m => m._id)
+      teamMembers: selectedTeam.map(m => m._id),
+      // Ensure manager info is preserved
+      manager: project?.manager?._id || user?._id,
+      managerName: project?.managerName || user?.name
     };
     createMutation.mutate(payload);
   };
@@ -775,7 +780,7 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
                     <div className="grid grid-cols-4 gap-3 text-[10px]">
                        <div><p className="text-slate-400 mb-0.5">Start Date</p><p className="font-bold text-slate-700">{new Date(formData.startDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</p></div>
                        <div><p className="text-slate-400 mb-0.5">End Date</p><p className="font-bold text-slate-700">{new Date(formData.endDate).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})}</p></div>
-                       <div><p className="text-slate-400 mb-0.5">Duration</p><p className="font-bold text-slate-700">{calculateDuration()} Days</p></div>
+                       <div><p className="text-slate-400 mb-0.5">Duration</p><p className="font-bold text-slate-700">{getDuration()} Days</p></div>
                        <div><p className="text-slate-400 mb-0.5">Total Budget</p><p className="font-bold text-slate-900">{formData.budget ? `${formData.currency.includes('USD') ? '$' : '₹'}${parseInt(formData.budget).toLocaleString()}` : 'N/A'}</p></div>
                     </div>
                   </div>
@@ -819,7 +824,7 @@ const AddProjectModal = ({ isOpen, onClose, project = null }) => {
                     {[
                       { l: 'Project Key', v: formData.key || '-', icon: Layout },
                       { l: 'Project Type', v: formData.type, icon: Edit2 },
-                      { l: 'Duration', v: `${calculateDuration()} Days`, icon: Clock },
+                      { l: 'Duration', v: `${getDuration()} Days`, icon: Clock },
                       { l: 'Milestones', v: `${formData.milestones.length} Milestones`, icon: Calendar },
                       { l: 'Total Budget', v: formData.budget ? `${formData.currency.includes('USD') ? '$' : '₹'}${parseInt(formData.budget).toLocaleString()}` : '-', icon: CreditCard },
                       { l: 'Team Members', v: `${selectedTeam.length} Members`, icon: Users },

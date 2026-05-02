@@ -1,174 +1,126 @@
-import express from 'express';
 import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
 import cors from 'cors';
-import dns from 'dns';
-
-// Force global DNS resolution to IPv4 first (Fixes ENETUNREACH on Render/Vercel)
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
+import morgan from 'morgan';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import hpp from 'hpp';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
-import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import hpp from 'hpp';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+// Utility Imports
 import connectDB from './config/db.js';
-import { connectRedis } from './utils/cache.js';
+import { createActivityLog } from './utils/logger.js';
 
-// Import Routes
+// Route Imports
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
-import superAdminRoutes from './routes/superAdminRoutes.js';
-import companyRoutes from './routes/companyRoutes.js';
-import salesRoutes from './routes/salesRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
-import documentRoutes from './routes/documentRoutes.js';
+import salesRoutes from './routes/salesRoutes.js';
+import companyRoutes from './routes/companyRoutes.js';
+import platformSettingsRoutes from './routes/platformSettingsRoutes.js';
 import activityLogRoutes from './routes/activityLogRoutes.js';
 import projectManagerRoutes from './routes/projectManagerRoutes.js';
 
-// Load environment variables
-dotenv.config();
-
 // Connect to Database
 connectDB();
-connectRedis();
 
 const app = express();
 
-// Trust proxy for Render/Vercel
-app.set('trust proxy', 1);
+// Set __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// 1. GLOBAL MIDDLEWARES
+// 1) GLOBAL MIDDLEWARES
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
-// Compress API responses
-app.use(compression());
+// Rate limiting
+const limiter = rateLimit({
+    max: 1000, // Increase to 1000 for dev/testing
+    windowMs: 15 * 60 * 1000, // 15 minutes instead of 1 hour
+    message: 'Too many requests from this IP, please try again in 15 minutes!',
+    skip: (req, res) => process.env.NODE_ENV === 'development' // Skip in development
+});
+app.use('/api', limiter);
 
-// Logging
-if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
+if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev'));
 }
 
-// Implement CORS
-app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL, 
-    'https://worksensy.vercel.app',
-    'https://worksensy.vercel.app/',
-    'http://localhost:3000', 
-    'http://localhost:5173',
-    'http://127.0.0.1:3000'
-  ].filter(Boolean),
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With', 'Accept'],
-}));
+// Data compression for faster loading
+app.use(compression());
 
-// Set security HTTP headers
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
-
-// Limit requests from same API - Adjusted for dashboard application
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 2000, // Increased for general dashboard usage
-  message: 'Too many requests from this IP, please try again in 15 minutes!',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Stricter limiter for auth routes
-const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // 20 attempts per hour
-  message: 'Too many login attempts from this IP, please try again in an hour!',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use('/api', limiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/setup-password', authLimiter);
-
-// Body parser, reading data from body into req.body
-app.use(express.json({ limit: '50mb' }));
+// Limit data from body to 10mb
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
-// Custom Data Sanitization against NoSQL query injection
-// This is a safe alternative to express-mongo-sanitize
-const sanitize = (obj) => {
-  if (obj instanceof Object) {
-    for (const key in obj) {
-      if (key.startsWith('$') || key.includes('.')) {
-         delete obj[key];
-      } else {
-         sanitize(obj[key]);
-      }
-    }
-  }
-  return obj;
-};
-
-app.use((req, res, next) => {
-  if (req.body) sanitize(req.body);
-  if (req.params) sanitize(req.params);
-  if (req.query) sanitize(req.query);
-  next();
-});
-
 // Prevent parameter pollution
-app.use(hpp({
-    whitelist: ['role', 'createdAt'] // Allow these parameters to be duplicated if needed
+app.use(hpp());
+
+// CORS configuration
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://work-management-v1.vercel.app',
+    /\.vercel\.app$/ // Allow all vercel preview deployments
+].filter(Boolean);
+
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
-// Routes
-app.get('/', (req, res) => {
-  res.send('API is running securely...');
-});
+// Serving static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// 2) ROUTES
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/super-admin', superAdminRoutes);
-app.use('/api/companies', companyRoutes);
-app.use('/api/sales', salesRoutes);
 app.use('/api/clients', clientRoutes);
-app.use('/api/documents', documentRoutes);
+app.use('/api/sales', salesRoutes);
+app.use('/api/companies', companyRoutes);
+app.use('/api/platform-settings', platformSettingsRoutes);
 app.use('/api/activity-logs', activityLogRoutes);
 app.use('/api/project-manager', projectManagerRoutes);
 
-// Error Handling Middleware
+// Health Check
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'success', message: 'Server is healthy' });
+});
+
+// 404 Handler
+app.use((req, res, next) => {
+    res.status(404).json({
+        status: 'fail',
+        message: `Can't find ${req.originalUrl} on this server!`
+    });
+});
+
+// Global Error Handler
 app.use((err, req, res, next) => {
-  console.error('SERVER ERROR 💥:', err); // Log the error for diagnostics
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode).json({
-    status: 'error',
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
-  });
+    err.statusCode = err.statusCode || 500;
+    err.status = err.status || 'error';
+
+    console.error('SERVER ERROR 💥:', err);
+
+    res.status(err.statusCode).json({
+        status: err.status,
+        message: err.message || 'Something went wrong!',
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
 });
 
 const PORT = process.env.PORT || 5000;
-
-const server = app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.log('UNHANDLED REJECTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
-  server.close(() => {
-    process.exit(1);
-  });
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
-  process.exit(1);
+app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });
