@@ -8,6 +8,7 @@ import { createActivityLog } from '../utils/logger.js';
 
 export const importLeads = async (req, res, next) => {
   try {
+    const companyId = req.user.companyId;
     if (!req.file) {
       return res.status(400).json({ status: 'fail', message: 'No file uploaded' });
     }
@@ -21,7 +22,7 @@ export const importLeads = async (req, res, next) => {
        return res.status(200).json({ status: 'success', message: 'Excel file is empty' });
     }
 
-    const currentMonth = new Date().toISOString().slice(0, 7);
+    const currentMonth = req.body.month || new Date().toISOString().slice(0, 7);
 
     // Validate Mandatory Headers
     if (rawData.length > 0) {
@@ -312,26 +313,45 @@ export const getMonthlyOverview = async (req, res, next) => {
     const selectedMember = member || teamMember || '';
 
     let query = { month, companyId, status };
+    let statsMatchQuery = { month, companyId };
 
     // Support for dynamic campaign filtering
     if (campaign) {
       query.campaign = campaign;
+      statsMatchQuery.campaign = campaign;
+    } else {
+      // If no campaign is specified, only show/count leads that don't belong to any campaign
+      const noCampaignFilter = {
+        $or: [
+          { campaign: { $exists: false } },
+          { campaign: '' },
+          { campaign: null }
+        ]
+      };
+      query = { ...query, ...noCampaignFilter };
+      statsMatchQuery = { ...statsMatchQuery, ...noCampaignFilter };
     }
 
     if (req.user.role === 'sales-team') {
       // Sales team sees all unassigned 'origin' leads or leads assigned to them in other statuses
       if (status === 'origin') {
-         query = { ...query, status: 'origin' };
+         query.status = 'origin';
       } else {
-         query = { ...query, status, convertedBy: req.user.name };
+         query.status = status;
+         query.convertedBy = req.user.name;
       }
+      
+      // Apply same visibility to stats
+      statsMatchQuery.$and = [
+        ...(statsMatchQuery.$and || []),
+        { $or: [{ status: 'origin' }, { convertedBy: req.user.name }] }
+      ];
     } else if (selectedMember) {
       // Admin/Manager filtering by a specific team member
       if (status !== 'origin') {
          query.convertedBy = selectedMember;
-      } else {
-         query = { ...query, status: 'origin' };
       }
+      statsMatchQuery.convertedBy = selectedMember;
     }
 
     // Add search functionality
@@ -354,21 +374,7 @@ export const getMonthlyOverview = async (req, res, next) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const isSalesTeam = req.user.role === 'sales-team';
-    let statsMatchQuery = { month, companyId };
 
-    if (campaign) {
-      statsMatchQuery.campaign = campaign;
-    }
-
-    if (isSalesTeam) {
-      statsMatchQuery.$or = [
-        { status: 'origin' },
-        { convertedBy: req.user.name }
-      ];
-    } else if (selectedMember) {
-      statsMatchQuery.convertedBy = selectedMember;
-      delete statsMatchQuery.$or;
-    }
 
     // Fetch unique campaigns for dynamic tabs
     const campaigns = await Lead.distinct('campaign', { month, companyId });
@@ -542,7 +548,7 @@ export const createLead = async (req, res, next) => {
   try {
     const companyId = req.user.companyId;
     const { 
-      leadId, name, phone, email, address, source, campaign, requirement, budget, location, date 
+      leadId, name, phone, email, address, source, campaign, requirement, budget, location, date, month: customMonth 
     } = req.body;
 
     // Check if leadId already exists for this company
@@ -551,8 +557,17 @@ export const createLead = async (req, res, next) => {
       return res.status(400).json({ message: 'Lead ID already exists' });
     }
 
-    const leadDate = date ? new Date(date) : new Date();
-    const month = leadDate.toISOString().slice(0, 7);
+    let leadDate;
+    let month;
+
+    if (customMonth) {
+      month = customMonth;
+      // If date is provided, use it. Otherwise, use first day of that month
+      leadDate = date ? new Date(date) : new Date(`${customMonth}-01`);
+    } else {
+      leadDate = date ? new Date(date) : new Date();
+      month = leadDate.toISOString().slice(0, 7);
+    }
 
     // Sync with Client
     let clientId = null;

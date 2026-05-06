@@ -325,7 +325,7 @@ const MonthlyOverview = () => {
       'Phone': lead.phone,
       'Email': lead.email || 'N/A',
       'Source': lead.source || 'N/A',
-      'Requirement': lead.requirement || lead.workType || 'N/A',
+      'Work': lead.requirement || lead.workType || 'N/A',
       'Budget': lead.budget || lead.totalAmount || 0,
       'Location': lead.location || 'N/A',
       'Status': lead.status,
@@ -353,6 +353,10 @@ const MonthlyOverview = () => {
     if (uploadCampaignName) {
       formData.append('campaignName', uploadCampaignName);
     }
+    // Pass current monthId to ensure leads are imported into this specific month
+    if (monthId) {
+      formData.append('month', monthId);
+    }
     setUploadLoading(true);
 
     try {
@@ -370,7 +374,7 @@ const MonthlyOverview = () => {
 
   const downloadSampleFormat = async () => {
     const sampleData = [
-      { 'ID': 'L-101', 'Name': 'John Doe', 'Phone': '9876543210', 'Email': 'john@example.com', 'Source': 'Google Ads', 'Location': 'Mumbai', 'Requirement': 'Web Development', 'Budget': 50000 }
+      { 'ID': 'L-101', 'Name': 'John Doe', 'Phone': '9876543210', 'Email': 'john@example.com', 'Source': 'Google Ads', 'Location': 'Mumbai', 'Work': 'Web Development', 'Budget': 50000 }
     ];
     const XLSX = await import('xlsx');
     const ws = XLSX.utils.json_to_sheet(sampleData);
@@ -694,8 +698,7 @@ const MonthlyOverview = () => {
                          <th className="px-4 py-4">Name</th>
                          <th className="px-4 py-4">Phone</th>
                          <th className="px-4 py-4">Source</th>
-                         <th className="px-4 py-4">Campaign</th>
-                         <th className="px-4 py-4">Requirement</th>
+                         <th className="px-4 py-4">Work</th>
                          <th className="px-4 py-4">Budget</th>
                          <th className="px-4 py-4 min-w-[120px]">Handled By</th>
                          <th className="px-4 py-4">Status</th>
@@ -704,7 +707,7 @@ const MonthlyOverview = () => {
                     )}
                     {activeTab === 'follow-up' && (
                        <>
-                         <th className="px-6 py-4">S.No</th>
+                         <th className="px-6 py-4">Lead ID</th>
                          <th className="px-4 py-4">Name</th>
                          <th className="px-4 py-4">Phone</th>
                          <th className="px-4 py-4">Source</th>
@@ -722,7 +725,7 @@ const MonthlyOverview = () => {
                     )}
                     {activeTab === 'converted' && (
                        <>
-                         <th className="px-6 py-4">S.No</th>
+                         <th className="px-6 py-4">Lead ID</th>
                          <th className="px-4 py-4">Client</th>
                          <th className="px-4 py-4">Phone</th>
                          <th className="px-4 py-4">Work</th>
@@ -821,7 +824,6 @@ const MonthlyOverview = () => {
                             </div>
                           </td>
                           <td className={`px-4 py-5 border-y transition-all shadow-sm group-hover:shadow-md ${isSelected ? 'bg-indigo-50/50 border-brand-primary shadow-brand-shadow' : isItemOverdue ? 'bg-red-100 border-red-200' : 'bg-white border-slate-100'} text-[10px] font-bold text-slate-500 uppercase tracking-widest`}>{lead.source}</td>
-                          <td className={`px-4 py-5 border-y transition-all shadow-sm group-hover:shadow-md ${isSelected ? 'bg-indigo-50/50 border-brand-primary shadow-brand-shadow' : isItemOverdue ? 'bg-red-100 border-red-200' : 'bg-white border-slate-100'} text-[10px] font-bold text-indigo-600 uppercase tracking-widest`}>{lead.campaign || '--'}</td>
                           <td className={`px-4 py-5 border-y transition-all shadow-sm group-hover:shadow-md ${isSelected ? 'bg-indigo-50/50 border-brand-primary shadow-brand-shadow' : isItemOverdue ? 'bg-red-100 border-red-200' : 'bg-white border-slate-100'} text-[12px] text-slate-500 font-medium max-w-[220px]`} title={lead.requirement}>
                             <div className="whitespace-normal line-clamp-2 leading-relaxed">{lead.requirement}</div>
                           </td>
@@ -931,7 +933,12 @@ const MonthlyOverview = () => {
 
                       {activeTab === 'follow-up' && (
                          <>
-                           <td className={`px-6 py-5 first:rounded-l-2xl border-y border-l transition-all shadow-sm group-hover:shadow-md ${isSelected ? 'bg-indigo-50/50 border-brand-primary shadow-brand-shadow' : isItemOverdue ? 'bg-red-100 border-red-200' : 'bg-white border-slate-100'} text-[11px] font-bold text-slate-400`}>{idx + 1}</td>
+                           <td className={`px-6 py-5 first:rounded-l-2xl border-y border-l transition-all shadow-sm group-hover:shadow-md ${isSelected ? 'bg-indigo-50/50 border-brand-primary shadow-brand-shadow' : isItemOverdue ? 'bg-red-100 border-red-200' : 'bg-white border-slate-100'}`}>
+                             <div className="flex items-center gap-3">
+                                <span className={`w-2 h-2 rounded-full ${lead.status === 'converted' ? 'bg-emerald-500' : 'bg-brand-primary'} shadow-sm shadow-brand-shadow`}></span>
+                                <span className="text-[11px] font-bold text-slate-500 font-mono bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">{lead.leadId}</span>
+                             </div>
+                          </td>
                           <td className={`px-4 py-5 border-y transition-all shadow-sm group-hover:shadow-md ${isSelected ? 'bg-indigo-50/50 border-brand-primary shadow-brand-shadow' : isItemOverdue ? 'bg-red-100 border-red-200' : 'bg-white border-slate-100'}`}>
                               <div 
                                 className="flex flex-col cursor-pointer hover:text-brand-primary transition-colors"
@@ -1051,7 +1058,12 @@ const MonthlyOverview = () => {
 
                       {activeTab === 'converted' && (
                          <>
-                           <td className={`px-6 py-5 first:rounded-l-2xl border-y border-l transition-all shadow-sm group-hover:shadow-md ${isSelected ? 'bg-indigo-50/50 border-brand-primary shadow-brand-shadow' : isItemOverdue ? 'bg-red-100 border-red-200' : 'bg-white border-slate-100'} text-[11px] font-bold text-slate-400`}>{idx + 1}</td>
+                           <td className={`px-6 py-5 first:rounded-l-2xl border-y border-l transition-all shadow-sm group-hover:shadow-md ${isSelected ? 'bg-indigo-50/50 border-brand-primary shadow-brand-shadow' : isItemOverdue ? 'bg-red-100 border-red-200' : 'bg-white border-slate-100'}`}>
+                             <div className="flex items-center gap-3">
+                                <span className={`w-2 h-2 rounded-full ${lead.status === 'converted' ? 'bg-emerald-500' : 'bg-brand-primary'} shadow-sm shadow-brand-shadow`}></span>
+                                <span className="text-[11px] font-bold text-slate-500 font-mono bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">{lead.leadId}</span>
+                             </div>
+                          </td>
                           <td className={`px-4 py-5 border-y transition-all shadow-sm group-hover:shadow-md ${isSelected ? 'bg-indigo-50/50 border-brand-primary shadow-brand-shadow' : isItemOverdue ? 'bg-red-100 border-red-200' : 'bg-white border-slate-100'}`}>
                               <div 
                                 className="flex flex-col cursor-pointer hover:text-brand-primary transition-colors"
@@ -1342,7 +1354,7 @@ const MonthlyOverview = () => {
                 </div>
 
                 <div className="space-y-1">
-                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-0.5">Requirement Details</label>
+                   <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-0.5">Work Details</label>
                    <textarea 
                      rows="2" value={manualForm.requirement}
                      onChange={(e) => setManualForm({...manualForm, requirement: e.target.value})}
@@ -1436,7 +1448,7 @@ const MonthlyOverview = () => {
                  </div>
 
                  <div className="space-y-1">
-                    <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-0.5">Requirement Details</label>
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-slate-500 ml-0.5">Work Details</label>
                     <textarea 
                       rows="3" value={editModalData.requirement || ''}
                       onChange={(e) => setEditModalData({...editModalData, requirement: e.target.value})}
@@ -1568,4 +1580,6 @@ const MonthlyOverview = () => {
 };
 
 export default MonthlyOverview;
+
+
 
